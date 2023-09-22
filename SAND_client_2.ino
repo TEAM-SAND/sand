@@ -8,14 +8,14 @@
 #include "BLEDevice.h"
 //#include "BLEScan.h"
 
-
+/*
 #include "FastIMU.h"
 // #include <Wire.h>
 
 #define IMU_ADDRESS 0x68
 #define PERFORM_CALIBRATION
 BMI055 IMU;
-
+*/
 
 // The remote service we wish to connect to.
 static BLEUUID serviceUUID("A07498CA-AD5B-474E-940D-16F1FBE7E8CD");
@@ -32,13 +32,20 @@ static BLEClient* pClient;
 boolean newVal = false;
 int count = 0;
 
+// ESP32-DevKitM-1 numbering: start top left, counterclockwise, skip last GND
+// To convert to 1u, same numbers?
+int white = 4; // Pin ?
+int red = 5; // Pin ?
+int green = 6; // Pin ?
+int lastcolor = 0;
 
+/*
 calData calib = { 0 };
 AccelData accelData;
 GyroData gyroData;
 
 boolean EPMS[18]; // Should be all false by default, unchecked
-
+*/
 
 static void notifyCallback(
   BLERemoteCharacteristic* pBLERemoteCharacteristic,
@@ -62,7 +69,8 @@ class MyClientCallback : public BLEClientCallbacks {
 
   void onDisconnect(BLEClient* pclient) {
     connected = false;
-    Serial.println("onDisconnect");
+    Serial.println("Disconnected");
+    // Another place to put active scan for reconnect?
   }
 };
 
@@ -82,6 +90,7 @@ bool connectToServer() {
 
     // Obtain a reference to the service we are after in the remote BLE server.
     BLERemoteService* pRemoteService = pClient->getService(serviceUUID);
+    // Serial.println("Passed the hanging line");
     if (pRemoteService == nullptr) {
       Serial.print("Failed to find our service UUID: ");
       Serial.println(serviceUUID.toString().c_str());
@@ -101,6 +110,7 @@ bool connectToServer() {
     }
     Serial.println(" - Found our characteristic");
 
+    // This block can be trimmed
     // Read the value of the characteristic.
     if(pRemoteCharacteristic->canRead()) {
       std::string value = pRemoteCharacteristic->readValue();
@@ -149,6 +159,7 @@ void scan() {
   pBLEScan->start(5, true); // Hopefully, should stop when device found
 }
 
+/*
 // Given an EPM id, turn it on or off as specified
 void onoff(int id, boolean turnOn) {
   // This section now depends on DMUX implementation
@@ -173,6 +184,7 @@ void onoff(int id, boolean turnOn) {
       break;
   }
 }
+
 
 // Need to number each EPM based on face relative to start
 void doMove(int order) {
@@ -207,7 +219,7 @@ void doMove(int order) {
       break;
   }
 }
-
+*/
 
 void setup() {
   Serial.begin(115200);
@@ -224,7 +236,7 @@ void setup() {
   pBLEScan->setActiveScan(true);
   pBLEScan->start(5, false);
 
-
+  /*
   Serial.println("Starting IMU Processes");
   int err = IMU.init(calib, IMU_ADDRESS);
   if(err != 0) {
@@ -243,9 +255,13 @@ void setup() {
     IMU.init(calib, IMU_ADDRESS);
   #endif
   //Example includes stuff about setting range? Unsure what it all means
+  */
 
+  pinMode(white, OUTPUT);
+  pinMode(green, OUTPUT);
+  pinMode(red, OUTPUT);
 
-  // TURN ON MAIN DATA LINES FOR DMUXES
+  // TURN ON MAIN DATA LINES FOR DMUXES?
 } // End of setup.
 
 // This is the Arduino main loop function.
@@ -280,12 +296,39 @@ void loop() {
     /* To convert to use in project, parse readValue differently
      *  and use in desired application
      */
+    /* Instead of readValue, could do readUInt8, but that only reads one byte */
     std::string str = pRemoteCharacteristic->readValue();
     int len = str.size();
     char *c = new char[len + 1];
     std::copy(str.begin(), str.end(), c);
     c[len] = '\0';
+    /* c is now a string with the contents of the characteristic */
     Serial.println(c);
+
+    // Demonstration code 
+    if(strcmp(c, "white") == 0) {
+      if(lastcolor) {
+        digitalWrite(lastcolor, LOW);
+      }
+      digitalWrite(white, HIGH);
+      lastcolor = white;
+    } else if(strcmp(c, "green") == 0) {
+      if(lastcolor) {
+        digitalWrite(lastcolor, LOW);
+      }
+      digitalWrite(green, HIGH);
+      lastcolor = green;
+    } else if(strcmp(c, "red") == 0) {
+      if(lastcolor) {
+        digitalWrite(lastcolor, LOW);
+      }
+      digitalWrite(red, HIGH);
+      lastcolor = red;
+    } else { // Turn off the 
+      digitalWrite(lastcolor, LOW);
+      lastcolor = 0;
+    }
+    
     newVal = false;
 
     /* // have id defined locally, unique for each bot before flashing
