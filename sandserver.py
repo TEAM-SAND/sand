@@ -2,6 +2,7 @@ import logging
 import asyncio
 import threading
 import time
+import sys
 
 from assembly import *
 
@@ -36,8 +37,7 @@ def write_request(
     # logger.debug(f"Char value set to {characteristic.value}")
 
 
-# Convert this loop into a constant loop that just runs until stopped
-async def run(loop):
+async def run(loop, test):
     trigger.clear()
     # Instantiate the server
     my_service_name = "Test Service"
@@ -69,10 +69,9 @@ async def run(loop):
             permissions)
     
     # True to send custom messages; false for algorithm
-    test = True
+    # test = True
     
     await server.start()
-    
     # Actual movement loop
     if not test:
         # Prep work for movement loop:
@@ -114,7 +113,22 @@ async def run(loop):
             c.value = newval
             server.update_value(my_service_uuid, my_char_uuid)
             val = input('Type \'exit\' to end the server\n')
+        server.get_characteristic(my_char_uuid).value = bytes("disconnect", 'UTF-8')
+        server.update_value(my_service_uuid, my_char_uuid)
+        time.sleep(2)
         await server.stop()
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(run(loop))
+
+def main():
+    # Get first command line argument,
+    test = sys.argv[1]
+    # check if boolean, and pass into loop
+    if type(test) == type(True):
+        print("Bad command line argument")
+        return
+    
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(run(loop, test))
+    
+if __name__ == "__main__":
+    main()
