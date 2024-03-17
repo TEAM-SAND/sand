@@ -15,8 +15,6 @@
 #define IMU_ADDRESS 0x68
 #define PERFORM_CALIBRATION
 BMI055 IMU;
-
-FastIMU imu(BMIO55_ADDR);
 */
 
 // The remote service we wish to connect to.
@@ -239,13 +237,6 @@ void setup() {
   pBLEScan->start(5, false);
 
   /*
-  // Initialize the FastIMU library
-  imu.init();
-
-  // Enable the interrupt (optional)
-  imu.enableInterrupt(INTERRUPT_PIN);
-  // -------------------------------
-
   Serial.println("Starting IMU Processes");
   int err = IMU.init(calib, IMU_ADDRESS);
   if(err != 0) {
