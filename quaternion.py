@@ -33,7 +33,7 @@ class Quaternion:
         y = y * sin(theta/2.)
         z = z * sin(theta/2.)
 
-        self._val = np.array([w, x, y, z])
+        self._val = normalize(np.array([w, x, y, z]))
 
     def __mul__(self, b):
 
@@ -56,10 +56,16 @@ class Quaternion:
 
         result = Quaternion.from_value(np.array((w, x, y, z)))
         return result
+    
+    def dot(self, q2):
+        w1, x1, y1, z1 = self._val
+        w2, x2, y2, z2 = q2._val
+
+        return w1*w2 + x1*x2 + y1*y2 + z1*z2
 
     def _multiply_with_vector(self, v):
         q2 = Quaternion.from_value(np.append((0.0), v))
-        return (self * q2 * self.get_conjugate())._val[1:]
+        return normalize((self * q2 * self.get_conjugate())._val[1:])
 
     def get_conjugate(self):
         w, x, y, z = self._val
