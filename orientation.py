@@ -26,12 +26,14 @@ def closest(av1, av2, odd, even):
 
     return min_i
 
-def check_orientation(data, prev_vects, init):
+def check_orientation(data, prev_vects, init, curr_q):
     av1 = []
     av2 = []
 
     ex1 = []
     ex2 = []
+    temp_q = []
+    axes = []
 
     q_arr = data.split(" ")
     # Set reference frame for calcs 
@@ -56,8 +58,10 @@ def check_orientation(data, prev_vects, init):
     i = float(q_arr[3])
     j = float(q_arr[5])
     k = float(q_arr[7])
-    vec = normalize(np.array([i, j, k]))
     quat = Quaternion.from_value(normalize(np.array((r, i, j, k))))
+
+    if init:
+        curr_q = quat
 
 
     # yaw = float(q_arr[9])
@@ -66,217 +70,157 @@ def check_orientation(data, prev_vects, init):
 
     # prev_vects[0] = normalize(prev_vects[0])
     # prev_vects[1] = normalize(prev_vects[1])
-    av1 = quat * prev_vects[0]
-    av2 = quat * prev_vects[1]
+    av1 = quat * init_vects[0]
+    av2 = quat * init_vects[1]
 
     
-    # Expected values
-    # check if rotated 90 degrees. 0.015 radian margin of error
-    if abs(quat.get_axisangle()[0] % (np.pi / 2)) <= 0.02 or abs(quat.get_axisangle()[0] % np.negative(np.pi / 2)) <= 0.02:
+
+    # If rotated on x axis, values should be close to actual
+    ev1 = r1 * prev_vects[0]
+    ev2 = r1 * prev_vects[1]
+    temp_q.append(curr_q * r1)
+    axes.append("x gimbal")
+    ev1 = list(map(lambda x: round(x), ev1))
+    ev2 = list(map(lambda x: round(x), ev2))
+    # print("ev1: ", ev1)
+    # print("ev2: ", ev2)
+    
+    # If rotated on y axis, values should be close to actual
+    ev3 = r2 * prev_vects[0]
+    ev4 = r2 * prev_vects[1]
+    temp_q.append(curr_q * r2)
+    axes.append("y gimbal")
+    ev3 = list(map(lambda x: round(x), ev3))
+    ev4 = list(map(lambda x: round(x), ev4))
+    # print("ev3: ", ev3)
+    # print("ev4: ", ev4)
+
+    # If rotated on z axis, values should be close to actual
+    ev5 = r3 * prev_vects[0]
+    ev6 = r3 * prev_vects[1]
+    temp_q.append(curr_q * r3)
+    axes.append("z gimbal")
+    ev5 = list(map(lambda x: round(x), ev5))
+    ev6 = list(map(lambda x: round(x), ev6))
+    # print("ev5: ", ev5)
+    # print("ev6: ", ev6)
+
+    ev7 = nr1 * prev_vects[0]
+    ev8 = nr1 * prev_vects[1]
+    temp_q.append(curr_q * nr1)
+    axes.append("x gimbal")
+    ev7 = list(map(lambda x: round(x), ev7))
+    ev8 = list(map(lambda x: round(x), ev8))
+    # print("ev7: ", ev7)
+    # print("ev8: ", ev8)
+
+    ev9 = nr2 * prev_vects[0]
+    ev10 = nr2 * prev_vects[1]
+    temp_q.append(curr_q * nr2)
+    axes.append("y gimbal")
+    ev9 = list(map(lambda x: round(x), ev9))
+    ev10 = list(map(lambda x: round(x), ev10))
+    # print("ev9: ", ev9)
+    # print("ev10: ", ev10)
+
+    ev11 = nr3 * prev_vects[0]
+    ev12 = nr3 * prev_vects[1]
+    temp_q.append(curr_q * nr3)
+    axes.append("z gimbal")
+    ev11 = list(map(lambda x: round(x), ev11))
+    ev12 = list(map(lambda x: round(x), ev12))
+    # print("ev11: ", ev11)
+    # print("ev12: ", ev12)
+
+    ev13 = z1 * prev_vects[0]
+    ev14 = z1 * prev_vects[1]
+    temp_q.append(curr_q * z1)
+    axes.append("x gimbal")
+    ev13 = list(map(lambda x: round(x), ev13))
+    ev14 = list(map(lambda x: round(x), ev14))
+    # print("ev13: ", ev13)
+    # print("ev14: ", ev14)
+
+    ev15 = z2 * prev_vects[0]
+    ev16 = z2 * prev_vects[1]
+    temp_q.append(curr_q * z2)
+    axes.append("y gimbal")
+    ev15 = list(map(lambda x: round(x), ev15))
+    ev16 = list(map(lambda x: round(x), ev16))
+    # print("ev13: ", ev15)
+    # print("ev14: ", ev16)
+
+    ev17 = z3 * prev_vects[0]
+    ev18 = z3 * prev_vects[1]
+    temp_q.append(curr_q * z3)
+    axes.append("z gimbal")
+    ev17 = list(map(lambda x: round(x), ev17))
+    ev18 = list(map(lambda x: round(x), ev18))
+    # print("ev13: ", ev17)
+    # print("ev14: ", ev18)
+
+    ev_odd = [ev1, ev3, ev5, ev7, ev9, ev11, ev13, ev15, ev17]
+    ev_even = [ev2, ev4, ev6, ev8, ev10, ev12, ev14, ev16, ev18]
+    index = closest(av1, av2, ev_odd, ev_even)
+    
+    ex1 = ev_odd[index]
+    ex2 = ev_even[index]
+    
+    curr_q = temp_q[index]
+
+    # ex1 = list(map(lambda x: round(x), ex1))
+    # ex2 = list(map(lambda x: round(x), ex2))
+
+    # av1 = list(map(lambda x: round(x), av1))
+    # av2 = list(map(lambda x: round(x), av2))
+
+    if abs(quat.angle_axis(curr_q)[0] % (np.pi / 2)) <= 0.01 or abs(quat.angle_axis(curr_q)[0] % np.negative(np.pi / 2)) <= 0.01:
         print("Actual vectors: ")
         print("av1: ", av1)
         print("av2: ", av2)
         
-
-        if not init:
-            # If rotated on x axis, values should be close to actual
-            ev1 = r1 * prev_vects[0]
-            ev2 = r1 * prev_vects[1]
-            ev1 = list(map(lambda x: round(x), ev1))
-            ev2 = list(map(lambda x: round(x), ev2))
-            # print("ev1: ", ev1)
-            # print("ev2: ", ev2)
-            
-            # If rotated on y axis, values should be close to actual
-            ev3 = r2 * prev_vects[0]
-            ev4 = r2 * prev_vects[1]
-            ev3 = list(map(lambda x: round(x), ev3))
-            ev4 = list(map(lambda x: round(x), ev4))
-            # print("ev3: ", ev3)
-            # print("ev4: ", ev4)
-
-            # If rotated on z axis, values should be close to actual
-            ev5 = r3 * prev_vects[0]
-            ev6 = r3 * prev_vects[1]
-            ev5 = list(map(lambda x: round(x), ev5))
-            ev6 = list(map(lambda x: round(x), ev6))
-            # print("ev5: ", ev5)
-            # print("ev6: ", ev6)
-
-            ev7 = nr1 * prev_vects[0]
-            ev8 = nr1 * prev_vects[1]
-            ev7 = list(map(lambda x: round(x), ev7))
-            ev8 = list(map(lambda x: round(x), ev8))
-            # print("ev7: ", ev7)
-            # print("ev8: ", ev8)
-
-            ev9 = nr2 * prev_vects[0]
-            ev10 = nr2 * prev_vects[1]
-            ev9 = list(map(lambda x: round(x), ev9))
-            ev10 = list(map(lambda x: round(x), ev10))
-            # print("ev9: ", ev9)
-            # print("ev10: ", ev10)
-
-            ev11 = nr3 * prev_vects[0]
-            ev12 = nr3 * prev_vects[1]
-            ev11 = list(map(lambda x: round(x), ev11))
-            ev12 = list(map(lambda x: round(x), ev12))
-            # print("ev11: ", ev11)
-            # print("ev12: ", ev12)
-
-            ev13 = z1 * prev_vects[0]
-            ev14 = z1 * prev_vects[1]
-            ev13 = list(map(lambda x: round(x), ev13))
-            ev14 = list(map(lambda x: round(x), ev14))
-            # print("ev13: ", ev13)
-            # print("ev14: ", ev14)
-
-            ev15 = z2 * prev_vects[0]
-            ev16 = z2 * prev_vects[1]
-            ev15 = list(map(lambda x: round(x), ev15))
-            ev16 = list(map(lambda x: round(x), ev16))
-            # print("ev13: ", ev15)
-            # print("ev14: ", ev16)
-
-            ev17 = z3 * prev_vects[0]
-            ev18 = z3 * prev_vects[1]
-            ev17 = list(map(lambda x: round(x), ev17))
-            ev18 = list(map(lambda x: round(x), ev18))
-            # print("ev13: ", ev17)
-            # print("ev14: ", ev18)
-
-            ev_odd = [ev1, ev3, ev5, ev7, ev9, ev11, ev13]
-            ev_even = [ev2, ev4, ev6, ev8, ev10, ev12, ev14]
-            index = closest(av1, av2, ev_odd, ev_even)
-            
-            ex1 = ev_odd[index]
-            ex2 = ev_even[index]
-
-            ex1 = list(map(lambda x: round(x), ex1))
-            ex2 = list(map(lambda x: round(x), ex2))
-
-            av1 = list(map(lambda x: round(x), av1))
-            av2 = list(map(lambda x: round(x), av2))
-        else:
-            av1 = list(map(lambda x: round(x), av1))
-            av2 = list(map(lambda x: round(x), av2))
-
-            ex1 = av1
-            ex2 = av2
-        
-        prev_vects = [ex1, ex2]
         print("Expected vectors: ")
-        print("Point 1: ", ex1)
-        print("Point 2: ", ex2)
-
-        
-
+        print("Point 1: ", list(map(lambda x: round(x), ex1)))
+        print("Point 2: ", list(map(lambda x: round(x), ex2)))
     else:
-        # print("radian angle: ", quat.get_axisangle()[0])
-        # print("mod: ", quat.get_axisangle()[0] % np.pi / 2)
-        print("BAD! rotation difference: ", round(math.degrees(abs(quat.get_axisangle()[0] - np.pi / 2)), 2), " degrees")
+        print("BAD! rotation difference:\n", round(math.degrees(quat.angle_axis(curr_q)[0]), 2), " degrees along the ", axes[index])
 
-
-        if not init:
-            # If rotated on x axis, values should be close to actual
-            ev1 = r1 * prev_vects[0]
-            ev2 = r1 * prev_vects[1]
-            ev1 = list(map(lambda x: round(x), ev1))
-            ev2 = list(map(lambda x: round(x), ev2))
-            # print("ev1: ", ev1)
-            # print("ev2: ", ev2)
-            
-            # If rotated on y axis, values should be close to actual
-            ev3 = r2 * prev_vects[0]
-            ev4 = r2 * prev_vects[1]
-            ev3 = list(map(lambda x: round(x), ev3))
-            ev4 = list(map(lambda x: round(x), ev4))
-            # print("ev3: ", ev3)
-            # print("ev4: ", ev4)
-
-            # If rotated on z axis, values should be close to actual
-            ev5 = r3 * prev_vects[0]
-            ev6 = r3 * prev_vects[1]
-            ev5 = list(map(lambda x: round(x), ev5))
-            ev6 = list(map(lambda x: round(x), ev6))
-            # print("ev5: ", ev5)
-            # print("ev6: ", ev6)
-
-            ev7 = nr1 * prev_vects[0]
-            ev8 = nr1 * prev_vects[1]
-            ev7 = list(map(lambda x: round(x), ev7))
-            ev8 = list(map(lambda x: round(x), ev8))
-            # print("ev7: ", ev7)
-            # print("ev8: ", ev8)
-
-            ev9 = nr2 * prev_vects[0]
-            ev10 = nr2 * prev_vects[1]
-            ev9 = list(map(lambda x: round(x), ev9))
-            ev10 = list(map(lambda x: round(x), ev10))
-            # print("ev9: ", ev9)
-            # print("ev10: ", ev10)
-
-            ev11 = nr3 * prev_vects[0]
-            ev12 = nr3 * prev_vects[1]
-            ev11 = list(map(lambda x: round(x), ev11))
-            ev12 = list(map(lambda x: round(x), ev12))
-            # print("ev11: ", ev11)
-            # print("ev12: ", ev12)
-
-            ev13 = z1 * prev_vects[0]
-            ev14 = z1 * prev_vects[1]
-            ev13 = list(map(lambda x: round(x), ev13))
-            ev14 = list(map(lambda x: round(x), ev14))
-            # print("ev13: ", ev13)
-            # print("ev14: ", ev14)
-
-            ev15 = z2 * prev_vects[0]
-            ev16 = z2 * prev_vects[1]
-            ev15 = list(map(lambda x: round(x), ev15))
-            ev16 = list(map(lambda x: round(x), ev16))
-            # print("ev13: ", ev15)
-            # print("ev14: ", ev16)
-
-            ev17 = z3 * prev_vects[0]
-            ev18 = z3 * prev_vects[1]
-            ev17 = list(map(lambda x: round(x), ev17))
-            ev18 = list(map(lambda x: round(x), ev18))
-            # print("ev13: ", ev17)
-            # print("ev14: ", ev18)
-
-            ev_odd = [ev1, ev3, ev5, ev7, ev9, ev11, ev13]
-            ev_even = [ev2, ev4, ev6, ev8, ev10, ev12, ev14]
-            index = closest(av1, av2, ev_odd, ev_even)
-            
-            ex1 = normalize(ev_odd[index])
-            ex2 = normalize(ev_even[index])
-
-            ex1 = list(map(lambda x: round(x), ex1))
-            ex2 = list(map(lambda x: round(x), ex2))
-
-            av1 = list(map(lambda x: round(x), av1))
-            av2 = list(map(lambda x: round(x), av2))
-        else:
-            av1 = list(map(lambda x: round(x), av1))
-            av2 = list(map(lambda x: round(x), av2))
-
-            ex1 = av1
-            ex2 = av2
-
-
-        prev_vects = [ex1, ex2]
+        print("Actual vectors: ")
+        print("Point 1: ", list(map(lambda x: round(x, 2), av1)))
+        print("Point 2: ", list(map(lambda x: round(x, 2), av2)))
+    
+    # Expected values
+    # check if rotated 90 degrees. 0.02 radian margin of error
+    # if abs(quat.get_axisangle()[0] % (np.pi / 2)) <= 0.02 or abs(quat.get_axisangle()[0] % np.negative(np.pi / 2)) <= 0.02:
+    #     print("Actual vectors: ")
+    #     print("av1: ", av1)
+    #     print("av2: ", av2)
         
+    #     print("Expected vectors: ")
+    #     print("Point 1: ", list(map(lambda x: round(x), ex1)))
+    #     print("Point 2: ", list(map(lambda x: round(x), ex2)))
+
+    # else:
+    #     print("BAD! rotation difference: ", round(math.degrees(quat.get_axisangle()[0] - np.pi / 2), 2), " degrees")
+
+    #     print("Actual vectors: ")
+    #     print("Point 1: ", list(map(lambda x: round(x, 2), av1)))
+    #     print("Point 2: ", list(map(lambda x: round(x, 2), av2)))
+
+
 
     # assuming all went smoothly
-    # prev_vects = [av1, av2]
-    return prev_vects
+    prev_vects = [ex1, ex2]
+    return prev_vects, curr_q
 
 
 # Open serial port
 ser = serial.Serial('COM5', 115200)
 
 # intial vectors will be on the x and y axis
+curr_q = None
 prev_vects = [[0,1,0], [0,0,1]]
+init_vects = [[0,1,0], [0,0,1]]
 init = True
 try:
     while True:
@@ -291,7 +235,7 @@ try:
         print("Received:", data)
 
         if "r:" in data:
-            prev_vects = check_orientation(data, prev_vects, init)  # Call Python function
+            prev_vects, curr_q = check_orientation(data, prev_vects, init, curr_q)  # Call Python function
             init = False
             
 except KeyboardInterrupt:

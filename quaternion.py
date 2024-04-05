@@ -1,3 +1,4 @@
+import math
 import numpy as np
 from math import sin, cos, acos, sqrt
 
@@ -12,7 +13,7 @@ class Quaternion:
 
     def from_axisangle(theta, v):
         theta = theta
-        v = normalize(v)
+        # v = normalize(v)
 
         new_quaternion = Quaternion()
         new_quaternion._axisangle_to_q(theta, v)
@@ -88,3 +89,16 @@ class Quaternion:
     def vector_norm(self):
         w, v = self.get_axisangle()
         return np.linalg.norm(v)
+    
+    def angle_axis(self, q):
+        dot = min(max(self.dot(q), -1), 1)
+        theta = acos(dot)
+
+        q_r = q.get_conjugate() * self.get_conjugate()
+
+        w, x, y, z = q_r._val
+
+        axis = [x / sin(theta/2), y / sin(theta/2), z / sin(theta/2)]
+
+        return (theta, axis)
+
