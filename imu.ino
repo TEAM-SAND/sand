@@ -6,7 +6,11 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 // Adafruit_SSD1306 display(-1);
+
+#define ALPHA 0.98 // Weighting factor for accelerometer data
+
 Adafruit_BNO08x_RVC rvc = Adafruit_BNO08x_RVC();
+
 float prev_r = 0.0;
 float prev_i = 0.0;
 float prev_j = 0.0;
@@ -32,6 +36,8 @@ void eulerToQuaternion(float yaw, float pitch, float roll, float &w, float &x, f
   x = floor((sr * cp * cy - cr * sp * sy)*100+0.5)/100;
   y = floor((cr * sp * cy + sr * cp * sy)*100+0.5)/100;
   z = floor((cr * cp * sy - sr * sp * cy)*100+0.5)/100;
+
+  
 }
 
 void setup() {
@@ -90,15 +96,27 @@ void loop() {
   float j = 0.0;
   float k = 0.0;
 
+  float ax = heading.x_accel / 100.0;
+  float ay = heading.y_accel / 100.0;
+  float az = heading.z_accel / 100.0;
+  
+  // Calculate pitch and roll angles using accelerometer data
+  float acc_pitch = atan2(-ax, sqrt(ay * ay + az * az));
+  float acc_roll = atan2(ay, sqrt(ax * ax + az * az));
+  
+  // Apply Complementary Filter to combine accelerometer and gyro data
+  float pitch = ALPHA * heading.pitch + (1 - ALPHA) * acc_pitch;
+  float roll = ALPHA * heading.roll + (1 - ALPHA) * acc_roll;
+
   eulerToQuaternion(heading.yaw, heading.pitch, heading.roll, r, i, j, k);
 
   if (prev_r != r || prev_i != i || prev_j != j || prev_k != k){
     Serial.print("r: ");
     Serial.print(r);
     Serial.print(" i: ");
-    Serial.print(i);
-    Serial.print(" j: ");
     Serial.print(j);
+    Serial.print(" j: ");
+    Serial.print(i);
     Serial.print(" k: ");
     Serial.println(k);
   }
@@ -109,5 +127,5 @@ void loop() {
   prev_k = k;
 
 
-   delay(100);
+  delay(10);
 }
