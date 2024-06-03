@@ -74,6 +74,28 @@ async def run(loop, test):
     await server.start()
     # Actual movement loop
     if not test:
+        # seq is path of magnets to move as follows:
+        # Starting with painted facing south and reference top
+        # Move 45 deg north
+        # Move 45 deg north
+        # Move 45 deg east
+        # Move 45 deg east
+        # Move 45 deg south
+        # Move 45 deg south
+        # NOTE: Currently doesn't work; think it's to do with test reading as not False
+            # For testing, just do path manually? Best to figure out timings, regardless
+        seq = ["S7", "S6", "S11", "S12", "S8", "S0"]
+        c = server.get_characteristic(my_char_uuid)
+        for val in seq:
+            newval = bytes(val, 'UTF-8')
+            c.value = newval
+            server.update_value(my_service_uuid, my_char_uuid)
+            time.sleep(2) # Time a movement takes in seconds (currently estimated)
+        c.value = bytes("disconnect", 'UTF-8')
+        server.update_value(my_service_uuid, my_char_uuid)
+        await server.stop()
+            
+        """
         # Prep work for movement loop:
         # create starting board
         startboard = [[0,1,0,0,0],[0]*5,[0,0,0,1,0],[0,0,1,0,0],[1,0,0,1,0]]
@@ -104,6 +126,7 @@ async def run(loop, test):
             else:
                 print("Unknown command", val)
         await server.stop()
+        """
     else:
         # Testing server functionality and updating characteristic values
         val = input('Type a message to write, or \'exit\' to end\n')
@@ -132,3 +155,31 @@ def main():
     
 if __name__ == "__main__":
     main()
+
+
+"""
+This software taken from example code from the bless repository under the following license:
+
+
+MIT License
+
+Copyright (c) 2020 Kevin Davis
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""

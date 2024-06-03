@@ -43,11 +43,11 @@ def find_dists(startlist, endlist):
   dists = {}
   for sid in startlist:
     newlist = {}
-    stxpos, stypos = startlist[sid]
+    srow, scol = startlist[sid]
     for eid in endlist:
-      endxpos, endypos = endlist[eid]
-      # Distance is difference in x coord + difference in y coord
-      newlist[eid] = abs(endxpos - stxpos) + abs(endypos - stypos)
+      erow, ecol = endlist[eid]
+      # Distance is sum of differences in rows and cols
+      newlist[eid] = abs(erow - srow) + abs(ecol - scol)
     dists[sid] = newlist
   return dists
 
@@ -87,10 +87,10 @@ def minsum(distlist):
 # Returns dict from startid : endpos
 def convert_goals(goals, endlist):
   goaldict = {}
-  id = 1
+  ident = 1
   for pos in goals:
-    goaldict[id] = endlist[(pos + 1) * 10]
-    id += 1
+    goaldict[ident] = endlist[(pos + 1) * 10]
+    ident += 1
   return goaldict
 
 # Given start and end position of (row, col), populate lsts
@@ -171,7 +171,7 @@ def getIndices(allPaths, lsts, maxi):
 def getFinalPaths(allPaths, indices):
   finalPaths = {}
   for i in range(len(allPaths)):
-    finalPaths[i+1] = allPaths[i + 1][indices[i]]
+    finalPaths[i+1] = allPaths[i+1][indices[i]]
   return finalPaths
 
 def getBLEInstructions(finalPaths, maxi):
@@ -204,9 +204,9 @@ def blackbox(startboard, endboard):
   startlist = convert_board(board, False)
   endlist = convert_board(endboard, True)
   distlist = find_dists(startlist, endlist)
-  distarr = np.array([distlist[key + 1] for key in range(len(distlist))]).T
-  distarr = np.asarray([list(row.values()) for row in distarr])
-  mins = minsum(distarr)
+  # distarr = np.array([distlist[key + 1] for key in range(len(distlist))]).T
+  # distarr = np.asarray([list(row.values()) for row in distarr])
+  mins = minsum(distlist)
   goals = convert_goals(mins, endlist)
   allPaths = getAllPaths(startlist, goals)
   maxi = convertAllPaths(allPaths)
