@@ -3,7 +3,7 @@ import itertools
 import random
 
 # Generate a board with xsize cols, ysize rows,
-# where every entry is 0 except for bots random entries being 1
+# where every entry is 0 except for random entries being 1 (represents bots)
 def gen_board(xsize, ysize, bots):
   # Random ints between 0 and x*y-1, format to array
   startlocs = random.sample(range(xsize * ysize), bots)
@@ -23,6 +23,7 @@ def gen_board(xsize, ysize, bots):
 
 # Given 2d array board, convert to a dict from id to tuple (row, col)
 # For start board, id is 1,2,...; for end board, id is 10,20,...
+# If using more than 9 bots, may need to adjust
 def convert_board(board, isend):
   ident = 1
   if isend:
@@ -38,7 +39,7 @@ def convert_board(board, isend):
   return botpos
 
 # Given start and end dicts, create dict of start id to distance
-# between all start and end positions, based x and y distances combined
+# between all start and end positions, based on x and y distances combined
 def find_dists(startlist, endlist):
   dists = {}
   for sid in startlist:
@@ -52,7 +53,6 @@ def find_dists(startlist, endlist):
   return dists
 
 
-# REMOVE xsize, ysize FROM THESE ITERATIONS
 # Given dict of distances, find smallest permutation of end ids
 # so each start id goes to unique end id with smallest total distance
 def minsum(distlist):
@@ -66,7 +66,6 @@ def minsum(distlist):
   # Largest distance * number of bots >= max column sum
   mini = np.max(distarr) * len(distarr)
 
-  # Need to define minperm in case of not assigned? It always should be
   # For each possible permutation of number of bots,
   for perm in itertools.permutations(range(len(distarr))):
     total = 0
@@ -83,18 +82,21 @@ def minsum(distlist):
   # Return the smallest permutation found
   return minperm
 
-# Takes tuple of end goal positions and dict of endid : endpos
+# Takes list of end goal positions and dict of endid : endpos
 # Returns dict from startid : endpos
 def convert_goals(goals, endlist):
   goaldict = {}
   ident = 1
   for pos in goals:
+    # Goals is list in order of startid;
+    # may need to adjust this step if using more than 9 bots
     goaldict[ident] = endlist[(pos + 1) * 10]
     ident += 1
   return goaldict
 
 # Given start and end position of (row, col), populate lsts
 # with all possible paths from start to end with every move going towards end
+# NOTE: Allowing pauses as movements may allow more cases to be solved; not implemented
 def pathList(start, end, lst, lsts):
   srow, scol = start
   erow, ecol = end
@@ -128,7 +130,7 @@ def convertAllPaths(allPaths):
     newval = len(paths[0])
     if newval > maxi:
       maxi = newval
-  # For each path, append the last element length is max
+  # For each path, append the last element until length is max
   for paths in allPaths.values():
     for i in range(len(paths)):
       lastval = paths[i][len(paths[i]) - 1]
@@ -136,17 +138,15 @@ def convertAllPaths(allPaths):
         paths[i].append(lastval)
   return maxi
 
-# From dict of list of lists, create list of permutations
-# containing every possible combination of lists from each list of lists
+# Given dict of startid : all possible paths, create list of
+# all possible tuples of paths
 def makeLsts(allPaths):
   pathLengths = [len(x) for x in allPaths.values()]
-  print(pathLengths)
   rangeList = [range(x) for x in pathLengths]
-  print(rangeList)
   lsts = list(itertools.product(*rangeList))
   return lsts
 
-# Given allPaths and lsts of all permutations of lists,
+# Given allPaths and lsts of all tuples of paths,
 # return the first permutation where none of the paths intersect
 def getIndices(allPaths, lsts, maxi):
   for indices in lsts:
@@ -167,13 +167,15 @@ def getIndices(allPaths, lsts, maxi):
       return indices
 
 # Given allPaths and a permutation, create dict of
-# id to path in that permutation
+# id to corresponding path
 def getFinalPaths(allPaths, indices):
   finalPaths = {}
   for i in range(len(allPaths)):
     finalPaths[i+1] = allPaths[i+1][indices[i]]
   return finalPaths
 
+# Given dict of startid : path, convert to list of strings
+# of each movement for each bot in format matching sandserver.py
 def getBLEInstructions(finalPaths, maxi):
   steplist = []
   for time in range(maxi - 1):
@@ -192,10 +194,8 @@ def getBLEInstructions(finalPaths, maxi):
         direction += '1'
       else: # STATIONARY
         direction += '0'
-        # What datatype should direction be? String? bytearray?
-        # It's being read as a string, so if we send it as a string,
-        # then we get exactly what we want
-        # and can read char by char as desired
+        # NOTE: May need to convert type of direction for better
+        # data transfer and easier processing on the ESP
     steplist += direction
 
 # Given start and end boards,
@@ -204,8 +204,6 @@ def blackbox(startboard, endboard):
   startlist = convert_board(board, False)
   endlist = convert_board(endboard, True)
   distlist = find_dists(startlist, endlist)
-  # distarr = np.array([distlist[key + 1] for key in range(len(distlist))]).T
-  # distarr = np.asarray([list(row.values()) for row in distarr])
   mins = minsum(distlist)
   goals = convert_goals(mins, endlist)
   allPaths = getAllPaths(startlist, goals)

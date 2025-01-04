@@ -1,3 +1,17 @@
+/**
+ * A BLE client example that is rich in capabilities.
+ * There is a lot new capabilities implemented.
+ * author unknown
+ * updated by chegewara
+ * 
+ * 
+ * 
+ * This file is modified from the ble_client example available
+ * as part of the Arduino ESP32 BLE library; the above text
+ * is the original credits
+ * This version authored by Eric O'Leary
+ */
+
 #include "BLEDevice.h"
 
 // The remote service we wish to connect to, declared in sandserver.py

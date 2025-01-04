@@ -90,7 +90,7 @@ async def run(loop, test):
             newval = bytes(val, 'UTF-8')
             c.value = newval
             server.update_value(my_service_uuid, my_char_uuid)
-            time.sleep(2) # Time a movement takes in seconds (currently estimated)
+            time.sleep(2) # Time a movement takes in seconds (not tested)
         c.value = bytes("disconnect", 'UTF-8')
         server.update_value(my_service_uuid, my_char_uuid)
         await server.stop()
